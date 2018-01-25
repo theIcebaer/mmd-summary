@@ -1,0 +1,398 @@
+\documentclass[]{article}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{mathtools} 
+\usepackage{amsmath}
+%opening
+\title{Zusammenfassung MMD}
+\author{Jens Beyermann}
+
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+
+
+\newtheorem{defi}{Definition}
+
+\begin{document}
+
+\maketitle
+
+\section{Lecture 1}
+
+Bla bla
+
+\section{Lecture 2}
+
+\subsection{Spark introduction}
+There are $2$ types of basic RDD operateins:
+\begin{itemize}
+\item \textbf{Transformations:} Transforms RDD's into other RDD's
+\item \textbf{Actions:} Computes Values from RDD's and returns them to the driver Programm.
+\end{itemize}
+\subsection{Example: Estimating $\pi$}
+whatever\dots
+\subsection{Clustering}
+\begin{itemize}
+\item Hard problem for high dimensional data. (why is it hard?)
+\item examples: CD's, Documents (customer-/word-vector)
+\item centroids: virtual centres by some measure in continuous (euclidean) space (not necessary part of the dataset)
+\item examples: galaxies and music cd's
+\item clustroids: centre point of the data by some measure, that is actual part of the dataset (for non continuous data-spaces)
+\item the algorithm (k-means)
+\item implementation in Spark
+\end{itemize}
+
+\section{Lexture 3}
+\subsection{Clustering Methods general}
+\begin{itemize}
+\item Successive  (k-) partitioning
+	\begin{itemize}
+	\item k-means
+	\item fitting k-gaussians (KDD)
+	\end{itemize}
+\item Hierarchical Clustering
+	\begin{itemize}
+	\item Agglomerative (merging)
+	\item Divisive (splitting)
+	\end{itemize}
+\end{itemize}
+
+\subsection{Hirachical clustering in the lecture}
+\begin{itemize}
+\item partitioning vs. hierachical
+\item in hierachical: agglomerative (merge two nearest clusters) vs. divisive (split clusters recursively)
+\end{itemize}
+There are three central questions to answer:
+\begin{itemize}
+\item representation of each cluster in the algorithm (centroids/clusteroids?)
+\item definition of nearness (distance "metric")
+\item decision what spilit is the "real" one
+\end{itemize}
+\textbf{Pseudocode of Merging Algorithms}
+\begin{itemize}
+\item TODO
+\end{itemize}
+\textbf{Derfinitions of "Nearness":}
+\begin{itemize}
+\item centroid distance
+\item intercluster distance
+	\begin{itemize}
+	\item single linkage
+	\item complete linkage
+	\end{itemize}
+\item cohesion quality (e.g. maximum distance from clustroid could be a notion of cohesion(zusammenhang) $\rightarrow$ merge clusters that's merge has best cohesion.
+\end{itemize}
+\subsection{Merging subroutine in Spark}
+blabla (todo maybe)
+
+\subsection{Clustering Metrics and evaluation}
+\textbf{Distance Metrics:}
+\begin{itemize}
+\item Euclidean distance
+\item Manhattan("City-Block distance)
+\item Generalization: ($p$-)Minkowski-Metric
+\item Hamming Distance
+\item Cosine similarity metric (distance or similarity?)
+\end{itemize}
+\textbf{Measuring Partitioning quality:}\\
+\textbf{a)} (with a quality metric)
+\begin{itemize}
+\item we use sum of squared errors to determine quality
+\item \textbf{BCV} between-cluster variation (maximize distance between clusters) \\
+	  Use sum of squared distances between clusters (represented by centroids $M_i$):
+	  $$BCV = \sum_{i=1}^{k}\sum_{j>i}^{k}D(M_i,M_j)^2$$
+\item \textbf{WCV} within-cluster variation (minimize variance inside of clusters) \\
+	  Use sum of squared distances between a sample of a cluster $C_i$ and its Centroid $M_i$ 
+	  $$ WCV = \sum_{i=1}{k}\sum{s \in C_i} D(s,M_i) $$ 
+\item [$\Rightarrow$] use quotient $\frac{BCV}{WCV}$ for cluster quality estimation
+\end{itemize}
+\textbf{b)} (with a Dendrogramm)
+\begin{itemize}
+\item uniformly distributed tree at the $y$-axis is hard to seperate (hierachical clustering does not igve good results here)
+\item dense at bootom and "thin" at the top indicates a clear "best cut".
+\end{itemize}
+
+\textbf{c)} (with a silhouett-plott)
+A silhouette plot maps each sample (by $y$-value) on it's distance from foreign clusters (what distance? minimum, maximum, average, whatever?)
+
+\begin{itemize}
+\item bad plots look more "triangular" like and some values might even go into negative distance (indicating strong overlapping)
+\item good plots look more "rectangular" like.
+\end{itemize}
+
+
+\section{Lecture 4}
+
+\subsection{Spark: Dataframes and Datasets}
+
+\subsection{MapReduce Paradigm}
+
+\subsection{Advanced Concepts of Map reduce}
+
+\subsection{Expressing Algorithms in MapReduce}
+
+\subsection{Optional: Cost of MapReduce}
+
+
+\section{Lecture 5}
+There are $3$ central approaches to recommendation systems:
+\begin{itemize}
+\item content-based approach
+\item collaborative filtering
+\item latent factor approach
+\end{itemize}
+\subsection{Recommender Systems: Content-based systems \& collaborative filtering}
+In all cases we use a \emph{utility function} $u: X \times S \rightarrow R$ to assign a rating  $r \in R$ to a combination of users and items. $R$ has to be a totally ordered set. We can describe this function with the utility matrix, where most values are commonly unknown. Outgoing from this formal description we want to solve the following problems for the different recommender systems:
+\begin{itemize}
+\item Gathering known ratings for the utility matrix .
+\item Extrapolate unknown ratings from the known ones. (We are commonly interested in high ratings since we want to \emph{recommend} stuff.)
+\item Evaluating extrapolation methods.
+\end{itemize}
+The first point can be answered without looking at the concrete method. Ratings can be gathered actively (by asking users for them) or passively (evaluate user behaviour e.g. look what they buy, watch or look at how often) 
+\subsection{Content-based recommender systems}
+A content based system creates \emph{user profiles} and \emph{item profiles}. The system recommends items to a user that are similar to his user profile.
+\begin{defi}[item profile]
+An \emph{item profile} is a vector of "natural" item features. Natural means, that someone has to select meaningful features for every item by hand.
+\end{defi}
+From the combination of item profiles we can construct user profiles, by all items, a certain user has rated.
+\begin{defi}[user profile]
+A \emph{user profile} is a vector of all features of the items the user rated averaged for each
+\end{defi}
+\subsection{Collaborative filtering}
+
+\subsection{Remarks and practical tips}
+
+
+\section{Lecture 6}
+
+\subsection{The netflix prize}
+
+\subsection{Contrasting recommendation methods}
+
+\subsection{Latent factor models}
+
+\subsection{Finding the latent factors}
+
+\subsection{Optimizing by stochastic gradient descent}
+
+\subsection{The netflix prize winner}
+
+
+\section{Lecture 7}
+
+\subsection{Hash functions and data structures}
+\begin{defi}[Hash function]
+A hash function $h: \rightarrow R $ maps objects from a usually huge domain $D$ to a usually small range $R$ of \textbf{consecutive} integers. Those integers are called "buckets" too.
+\end{defi}
+A hash function $h$ is in general not injective, so collisions can appear. Some intuitions of hash functions are:
+\begin{itemize}
+\item A hash is a small signature of the original data.
+\item A hash is a mapping from a sparse storage ($D$) to a dense storage  ($R$).
+\end{itemize}
+We use hashes to store items with (nearly) constant lookup time from a big domain $D$ efficiently, since a table for all possible elements $d \in D$ would be too large, but a table for all hashes $r \in R$ is possible.\\ \\
+
+A canonical way to implement a hash function is the "modulo"-operation:
+\[
+h(x):= x \mod b \text{ for } x \in D \text{ represented as integer (e.g. ASCII)},
+\]
+where $b$ is preferably a prime (to avoid collisions?).\\ \\
+
+\textbf{Data structures based on hashes:}
+\begin{itemize}
+\item hashSet
+\item hashMap
+\item TreeMap (is it really?)
+\item dictionary
+\end{itemize}
+
+Some examples to implement a set are given here the hash implementation gives obviously the best compromise between data storage and access complexity for most cases.
+\begin{itemize}
+\item sorted table
+\item bit array
+\item hash table
+\end{itemize}
+
+\subsection{Finding similar items: Locality sensitive hashing}
+Now we want to use hash functions to identify similarities between items. We saw or will see many approaches to this problem already, e.g.:
+\begin{itemize}
+\item Finding near or "similar" points (clustering)
+\item Finding pages with similar words (duplicate detection or topic calssification)
+\item Customers who purchased similar Products
+\end{itemize}
+We will look at a variation of the first problem now. Assume we have high dimensional data points $x_i$ (e.g. images with many pixels) and a distance measure $d(x_i,x_j)$. If we want to find all pairs of data points $(x_i,x_j)$ that's distance is under a certain threshold $s$ e.g. $ d(x_i,x_j) \leq s$, the naive approach (computing pairwise distances) would take $\mathcal{O}(n^2)$. To find a way to compute similar items (a.k.a. near neighbours) in (basically?) we first recall the definition of the Jaccard similarity
+\begin{defi}
+Given two sets $C_1$ and $C_1$ the \emph{Jaccard similarity} is defined as
+\[
+	J_{\text{sim}}(C_1,C_2) = \frac{\abs{C_1 \cap C_2}}{\abs{C_1 \cup C_2}}\text{,}
+\]
+where at least one of the sets $C_1,C_2$ is non-empty. If both sets are empty we define their similarity (canonical) as $1$. The \emph{Jaccard distance} is analogously defined as
+\[
+J_{\text{dist}}(C_1,C_2) = 1- J_{\text{sim}}(C_1,C_2)\text{.}
+\]
+\end{defi}
+The problem we want to look at is the task to find similar documents in a very big dataset. To accomplish our goal we will explore the following steps:
+\begin{enumerate}
+\item shingling (convert the documents to sets)
+\item min-hashing (compress large sets to short signatures in a way that preserves similarity)
+\item locality-sensitive hashing (find pairs of signatures that are likely to be from similar documents)
+\end{enumerate}
+After those steps are performed we get a candidate set of possible (likely?) similar documents. Their real distance can now be determined by a classical approach.
+
+\subsection{Shingling}
+To convert the documents into sets we need a projection that preserves the order of the inherited tokens (e.g. words or characters), so just looking at the set of all words or identifying important words doesn't help here. The needed projection can be defined with the help of shingles.
+
+\begin{defi}[$k$-shingle]
+A $k$-shingle or $k$-gram is a consecutive sequence of $k$ tokens that appear in the document, where tokens are fundamental elements of the document (e.g. words, characters or something else depending on the application). 
+\end{defi}
+Now we can construct a set or a multiset from a document and use Jaccard similarity to determine their "nearness". Those sets can be represented by a sparse $0/1$-vector (or with integer values in case of a multiset). \\
+\textbf{Central Assumption:} Documents, that share many shingles have similar text. Care: Similar text doesn't necessarily mean similar content NLP is still a hard Problem!\\
+
+\textbf{compression of shingles:} There is the additional possibility to compress the shingle-vectors by a hash function. This of course gives us a certain probability of collisions depending on the chosen hash
+
+\subsection{MinHashing}
+For now we just have found a representation of documents as vectors and a similarity measure. Computing pairwise Jaccard similarity still takes far too long. 
+
+Neeed:
+ - definition of min hashing
+ - explanmation of permutation stuff and other view
+ - central: min hash property
+ - eventually: details of implementation
+
+\section{Lecture 8}
+
+\subsection{Recall}
+
+\subsection{Continuing on minHashing}
+
+\subsection{Repetition of Spark dataframes and datasets}
+
+\subsection{Spark: Execution details}
+
+
+\section{unspecified chapter}
+\subsection{Mining Data Streams}
+Data streams represent infinite non-stationary (variable input rate and distribution?) Data. \\
+\textbf{Data Model: stream}
+\begin{itemize}
+\item one steam per port
+\item elements of streams are called tuples
+\end{itemize}
+\textbf{Interesting Problems on Data Streams}
+\begin{itemize}
+\item Sampling Data from a Stream
+\item Queries over sliding Windows
+\item Filtering a data Stream
+\item Counting distinct elements (Query?)
+\item Estimating moments (Query?)
+\item Finding frequent elements (Query?)
+\end{itemize}
+
+
+\section{Lecture 9}
+Online Algorithms vs Offline Algorithms
+\begin{itemize}
+\item \textbf{offline:} Full input available at start of the algorithm
+\item \textbf{online: } Only partial access to input. Mostly in form of elements/tuples of a stream. Problem: irrecoverable decisions have to be made.
+\end{itemize}
+
+\subsection{Online Bipartite Matching (Example)}
+
+Definition of a Matching.
+
+Problem of finding maximum (if possible perfect) matching. \\
+The Problem is solved for offline problems (Hopcroft and Carp, or others).
+
+Modified online Problem:
+\begin{itemize}
+\item one side's preferences are known.
+\item the other side's preferences come one by one from a stream
+\end{itemize}
+Definition of Competitive Ratio: The Algorithms worst performance over all possible input (permutations) of the Data.
+
+\begin{defi}[competitive ratio ]
+The competitive ratio $c$ is defined as $c = min_{I}\{ \frac{\abs(M_{algo})}{abs(M_opt)} \}$. Where I are all possible inputs for the Algorithm.
+\end{defi}
+
+\section{Lecture 10}
+\subsection{Filtering}
+\textbf{Problem:} filter a stream, e.g. determine witch tuples of a list $S$ are in the stream.\\
+\textbf{Solution:} Use a hashtable, if your hashtable doesn't fit into memory use a hashtable anyway and live with the possibility of collisions $\rightarrow$ false positives.\\
+\\
+With i.i.d. data and a uniform hash function we have approx. $\frac{\vert S \vert}{\vert B \vert}$ false positives. 
+Exact formula:
+\[
+1 - (1-\frac{1}{n})^{n(\frac{m}{n})} = 1-e^{-\frac{m}{n}}
+\]
+\begin{algorithm}
+\caption{Bloom Filter Algorithm}
+\label{bloom}
+\begin{algorithmic}
+\Require A set of searched keys $S$ with $n= \abs{S}$, bitset $B$ with $m=\abs{B}$, $k$ independent hash-functions $h_1,\dots,h_k$ and a data-stream $D$.
+\State Set all bits of $B$ to $0$
+\State Hash all elements of $S$ into $B$, e.g. set $B[h_i(s)]$ $\forall i=1,\dots,k$ and $s \in S$. 
+\While{$D$ not empty}
+look if all hashes are there for every x in D. If true, add x to result, else throw it away.
+\EndWhile
+\end{algorithmic}
+
+\end{algorithm}
+
+\subsection{Independent hashfunctions}
+Not much information given by this lecture. Only Ideas:
+\begin{itemize}
+\item \textbf{Possibility $1$:} Take all odd numbered positions of input $x$ interpret them as an own number and calculate modulo $p$ with $p$ prime.
+\item \textbf{Possibility $2$:} See $1$ only with the even numbered.
+\end{itemize}
+
+Resulting false positive probability: $P = (1- e^{-\frac{km}{n}})^k$.\\
+Optimal value of k: $\frac{n}{m} \ln(2)$. (derive probability with respect to k)
+
+\subsection{summary bloom filter}
+\begin{itemize}
+\item no false negatives and no extensive use of memory $\rightarrow$ good for preprocessing.
+\item hashes can be computed parallel (even in hardware)
+\item One big $B$ or $k$ small $B$-s have equivalent error Probability: $(1-e^{}) $ %TODO
+\end{itemize}
+
+\section{Lecture 12}
+For now we saw methods for stream filtering and for sampling a fixed porportion of the stream. 
+In this lecture we see a method for sampling a sample with fixed size that is representative for the stream. "Representative" in this circumstances means, that after $n$ items of the stream, we each item of the (seen) stream has probability $\frac{s}{n}$ to be in the sample-set $S$.
+
+\begin{algorithm}
+\caption{Reservoir-sampling algorithm}
+\label{reservoir-sampling}
+\begin{algorithmic}
+\Require 
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Link analysis \& the pageRank algorithm}
+In this chapter we will look at the web as a graph, nodes will represent web pages, and (direkted) edges the links between them. The problem we will look at is the question how important certain websites are. The answer is the well known pageRank algorithm. It's foundation is the idea, that a page is more important, if more other sites link at it. The other key idea is that links from other important sites are more important. As a result we can define the \emph{rank} $r_j$ of a page $j$ as:
+\[
+	r_j = \sum_{i \rightarrow j}\frac{r_i}{d^{\text{ out}}_i}
+\]
+Those equations build a system with $N$ unknowns, $N$ equations, and no fixed points aka constants (so not $N$ linear undependent lines). This system is called the "flow equations". The additional constraint
+\[
+	r_y + r_a + r_m = 1
+\]
+forces uniqueness. Since the web is big, gaussian elemination won't scale good enough for our purpose. To find a faster solution we define the \emph{stochastic adjacency matrix.}
+
+\begin{defi}[stochastic adjacency matrix]
+Let $G = (N,E)$ be the web graph and $d_i$ the out-degree of node $i$. We define
+\[
+M_{ji} = \begin{cases}
+\frac{1}{d_i} 	&\text{ if } (i,j) \in E, \\
+0 				&\text{ else}.
+\end{cases}
+\]
+M is a column stochastic matrix (i.e. columns sum to $1$).
+\end{defi}
+Now we look at the whole rank vector $r$ of all page ranks $r_i$. Under the assumption that $\sum_i r_i = 1$ (maybe even without it, because the equation is not part of the flow equations) we can write the flow equations as 
+\[
+	r = M \cdot r
+\]
+Now we see that $r$ is an \emph{eigenvector} of $M$, in fact the first or principal eigenvector with eigenvalue $1$. As a result we can solve the problem with an iterative method called \emph{power iteration}.
+\end{document}
