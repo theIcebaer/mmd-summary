@@ -155,14 +155,77 @@ The first point can be answered without looking at the concrete method. Ratings 
 \subsection{Content-based recommender systems}
 A content based system creates \emph{user profiles} and \emph{item profiles}. The system recommends items to a user that are similar to his user profile.
 \begin{defi}[item profile]
-An \emph{item profile} is a vector of "natural" item features. Natural means, that someone has to select meaningful features for every item by hand.
+An \emph{item profile} is a $0/1$ or real valued vector of "natural" item features. Natural means, that someone has to select meaningful features for every item by hand. For a given set of items an item vector contains every feature of all items and has (most commonly) value $0$ for features the item doesn't have.
 \end{defi}
 From the combination of item profiles we can construct user profiles, by all items, a certain user has rated.
 \begin{defi}[user profile]
-A \emph{user profile} is a vector of all features of the items the user rated averaged for each
+A \emph{user profile} is a vector of all features of the items the user rated averaged over all rated items of the user. The correct user profile has to be centralized by the users mean rating (substract mean rating (global, not per feature)). Another optimization is not to normalize by the number of all rated items (average) but by the number of ratings of items with the respective feature.
 \end{defi}
-\subsection{Collaborative filtering}
+To determine similar profiles, we can use the cosine similarity that measures the angle between two vectors from $-1$ (opposite direction) to $1$ (parallel).
+\begin{defi}[cosine-similarity]
+Given a user vector $u$ and an item vector $i$ the cosine similarity $\text{cos}(x,i)$ is defined as 
+\[
+	\text{cos}(x,i) = \frac{x \cdot i}{\vert \vert x \vert \vert \cdot \vert \vert i \vert \vert}
+\]
+\end{defi}
+Now we can follow several strategies to recommend items to users. Two of them are:
+\begin{itemize}
+\item Recommend all items with similarity $>$ threshold.
+\item Recommend the $k$ most similar items to the user.
+\end{itemize}
 
+\textbf{Advantages of the content-based approach}
+\begin{itemize}
+\item All users have independent predictions what they like/dislike. As a result the sparsity of the utility matrix is no problem and we don't have the "cold start" problem of other systems that gives complete garbage for everyone if there aren't enough ratings in the system. Of course we still have the problem that a new user with less ratings gets inaccurate predictions.
+\item Another result of the independence is the ability to recommend features to users with unique tastes. 
+There is no problem with a "popularity bias" because every item is only represented by it's features. Every item can be recommended from the time where it is inserted into the database. (new and unpopular items can be recommended (if there is a match)).
+\item The system is "understandable" because we can look at the combinations of features and see what features are similar for certain items and users.
+\end{itemize}
+\textbf{Disadvantages}
+\begin{itemize}
+\item Finding appropriate and meaningful features isn't easy and has to be done "by hand" in most cases.
+\item Like mentioned before new users get very inaccurate recommendations until they inserted some rankings.
+\item There are no recommendations for item's "outside" the user's content profile. (If an item and a user profile have disjunct features there will never be a recommendation even if the user might like it.) this is a problem because people might have multiple interests. 
+\end{itemize}
+Question did we answer the questions from the beginning? The way of gathering ratings i independent from the method. We don't predict ratings because we don't need to, we directly get recommendations from existing ratings. And the evaluation is rather qualitative (pros and cons).
+
+\subsection{Collaborative filtering}
+The idea of collaborative filtering is to predict a user's rating on items he hasn't rated by the ratings of "similar users". Similar users means here users, that gave similar ratings on items our first user did rate. To find similar users based on their ratings we need an appropriate similarity metric. We use some kind of combination of the, already known, cosine-similarity and the Jaccard similarity (TODO: copy definition here).
+\\\\
+Now we can construct the pearson-correlation coefficient
+\begin{defi}[pearson-correlation coefficient]
+Let $x$ and $y$ be users, and $S_{xy}$ the set of items rated by both users $x$ and $y$.
+\[
+\text{sim}(x,y) = \frac{\sum_{s\in S_{xy}}(r_{xs} - \overline{r_x})(r_{ys} - \overline{r_y})}{\sqrt{\sum_{s\in S_{xy}}(r_{xs} - \overline{r_x})^2}\sqrt{\sum_{s\in S_{xy}}(r_{ys} - \overline{r_y})^2}}
+\]
+\end{defi}
+After we defined a sensible similarity metric for users we can come to predicting unknown ratings for our users. To predict a rating $r_{xi}$ of user $x$ for an item $i$ we need the set $N$ of the $k$ other users that, rated item $i$ and are most similar to user $x$. The prediction is done by a (weighted) average over the other users ratings, i.e.:
+
+\begin{align}
+r_{xi} &= \frac{1}{k}\sum_{y \in N} r_{yi} \text{ (simple average)} \\ 
+r_{xi} &= \frac{\sum_{y \in N} s_{xy} \cdot r_{yi}}{\sum_{y \in N} s_{xy}} \text{ (weighted average)}
+\end{align}
+
+Where $s_{xy}$ is the pearson-correlation coefficient between user $x$ and user $y$. \\\\
+
+Another way to calculate predictions is to look at the similarities between items instead of users. Since the pearson-correlation coefficient is sensible for items too, we just have to modify our prediction function very slightly:
+\[
+	r_{xi} = \frac{\sum_{j \in N(i;x)} s_{ij} \cdot r_{xj}}{\sum_{j \in N(i;x)} s_{ij}}
+\]
+Where $N(i;x)$ is the set of $k$ most similar items to $i$, that were rated by user $x$. In practice item-item prediction often works better than user-user. One possible explanation is, that items are simpler and less inconsistent than humans.\\\\
+
+\textbf{Advantages of collaborative filtering}
+\begin{itemize}
+\item Works without hand selected features $\rightarrow$ full automation for every kind of items.
+\item Nothing else is mentioned in the lecture. But the above is a really big advantage.
+\end{itemize}
+\textbf{Disadvantages}
+\begin{itemize}
+\item Cold start: The system doesn't work at all if there are not enough users (and ratings) in the utility matrix.
+\item The user/rating(this is the utility matrix right?) matrix is sparse and therefore we probably don't have enough similar users/items to make accurate predictions.
+\item First rater: New or very uncommon items have no ratings and therefore can't be recommended.
+\item The system depends on the existence of similar items/users, so people with uncommon tastes can't be recommended very well (is this true for item-item too?).
+\end{itemize}
 \subsection{Remarks and practical tips}
 
 
