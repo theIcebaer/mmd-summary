@@ -227,18 +227,38 @@ Where $N(i;x)$ is the set of $k$ most similar items to $i$, that were rated by u
 \item The system depends on the existence of similar items/users, so people with uncommon tastes can't be recommended very well (is this true for item-item too?).
 \end{itemize}
 \subsection{Remarks and practical tips}
-
-
+In the real world obviously both kinds of systems are used, possibly combined.
 \section{Lecture 6}
 
 \subsection{The netflix prize}
+Boring stuff\dots
 
 \subsection{Contrasting recommendation methods}
+For know we know the content-based approach, where we get some kind "prediction" from a product of the item- and user-vector, in an $k$-dimensional space independent of the utility matrix. (The ratings are only weights in the "feature space") and Collaborative filtering, where each (predicted) rating is a linear combination of other ratings in the utility matrix.
+Now we want a method that combines both techniques.
 
 \subsection{Latent factor models}
+The idea of latent factor models is, to represent each item $i$ and each user $x$ by vectors with $k$ entries $q_i$ and $p_x$. This leads to a decomposition of the utility matrix $R$ into an item matrix $Q$ and a user matrix $P^T$, i.e. $R \approx Q \cdot P^T$. But $P$ and $Q$ are everything else than well defined at this point. We neither know the number of factors (determining the dimension of $P$ and $Q$) nor the concrete values.
 
 \subsection{Finding the latent factors}
+Now we want to determine the concrete entries of $P$ and $Q$ in such a way that the sum of squared errors with respect to the known ratings is minimal, i.e.
+\[
+ \min_{P,Q}\sum_{(i,x) \in R} (r_{xi} - q_i \cdot p_x )^2
+\]
+Let's assume for now, that we pick the number of factors by hand. Then we just have to minimize the above function. A possible way to do this is a "naive" formulation of gradient decent:
+\begin{enumerate}
+\item Compute derivative of $f$: $\nabla f$.
+\item Start at some point $y$ and evaluate $\nabla f$.
+\item Make a step in the reverse direction of $\nabla f$: $$y= y - \nabla f$$.
+\item Repeat until convergence.
+\end{enumerate}
+Now go back to the actual Problem. To determine a sensible number of factors $k$, we have to take into consideration that a big $k$ makes our model more complex, what, one the one hand, is good, since we want a model that represents the reality in an accurate way but if we use too many factors we get the classical overfitting-problem. Too many features fit our model too strict to the training data and thus the model can't be generalized to test-data anymore. \\\\
 
+To deal with this problem with a formal approach we add the number of factors to our optimization function.
+\[
+ \min_{P,Q}\sum_{(i,x) \in R} (r_{xi} -q_i \cdot p_x )^2 + (\lambda_1\sum_x\vert\vert p_x\vert \vert^2 + \lambda_2\sum_i`\vert\vert q_i\vert \vert^2)
+\]
+Where $\lambda_j$ are user defined parameters (in our case we only have to choose one parameter since both vectors need same length). This idea is called "Regularization" and it allows us to force the optimization to find a "sensible" compromise. The optimization will now prefer a model where many dimensions are actually $0$ so the summed norm in the above function gets minimized.
 \subsection{Optimizing by stochastic gradient descent}
 
 \subsection{The netflix prize winner}
